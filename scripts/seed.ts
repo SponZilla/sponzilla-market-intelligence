@@ -22,7 +22,8 @@ async function runSeed() {
 
     if (run.status === 'COMPLETED' && run.opportunity) {
       console.log(`✅ Success | Run ID: ${run.id}`);
-      console.log(`   Status: [${run.opportunity.status}]`);
+      console.log(`   Qualification: [${run.opportunity.qualificationStatus}]`);
+      console.log(`   contractVersion: ${run.opportunity.contractVersion}`);
       console.log(`   Verified Live URLs Captured: ${run.sources.length}`);
       run.sources.forEach((s, idx) => {
         console.log(`     [Source ${idx + 1}] (${s.verificationStatus}) ${s.title}`);
@@ -33,7 +34,7 @@ async function runSeed() {
       console.log(`   Audience: ${run.opportunity.audience}`);
       console.log(`   Confidence: [${run.opportunity.confidence}] - ${run.opportunity.confidenceReason}`);
       console.log(`   Recommendation: ${run.opportunity.recommendation}`);
-      console.log(`   Next Action: ${run.opportunity.nextAction}`);
+      console.log(`   Next Action Hint: ${run.opportunity.nextActionHint}`);
     } else {
       console.log(`❌ Pipeline Error: ${run.error}`);
     }

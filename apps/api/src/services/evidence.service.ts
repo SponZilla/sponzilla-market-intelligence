@@ -31,7 +31,7 @@ export class EvidenceExtractor {
         const claim = `${companyName} announced operational & marketing activity in "${src.title.substring(0, 60)}"`;
         const fact = `The verified source reports: "${factSnippet}"`;
         const aiInference = `This confirmed fact indicates an active expansion window and commercial momentum for ${companyName}.`;
-        const opportunity = `Target ${companyName}'s marketing team with structured sponsorship & partner activation packages during this growth cycle.`;
+        const suggestedAngle = `Target ${companyName}'s marketing team with structured sponsorship & partner activation packages during this growth cycle.`;
 
         evidenceList.push({
           id: `ev_${crypto.randomBytes(6).toString('hex')}`,
@@ -45,7 +45,7 @@ export class EvidenceExtractor {
           },
           fact,
           aiInference,
-          opportunity,
+          suggestedAngle,
           sourceId: src.id,
           confidenceScore: 0.95
         });

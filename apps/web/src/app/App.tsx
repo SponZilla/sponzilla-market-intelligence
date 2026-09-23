@@ -116,7 +116,7 @@ export default function App() {
   };
 
   const opp: Opportunity | null = currentRun?.opportunity || null;
-  const isNoOpportunity = opp?.status === 'no_verified_opportunity_found';
+  const isNoOpportunity = opp?.qualificationStatus === 'NO_VERIFIED_OPPORTUNITY';
 
   return (
     <div className="container">
@@ -349,7 +349,7 @@ export default function App() {
                     <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#facc15', fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>
                         <Lock style={{ width: 18, height: 18 }} />
-                        Status: no_verified_opportunity_found
+                        Status: NO_VERIFIED_OPPORTUNITY
                       </div>
                       <p style={{ color: '#fef08a', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '0.75rem' }}>
                         {opp.aiInference.summary}
@@ -442,7 +442,7 @@ export default function App() {
                                   <Target style={{ width: 13, height: 13 }} /> Resulting Commercial Opportunity
                                 </div>
                                 <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff' }}>
-                                  {ev.opportunity}
+                                  {ev.suggestedAngle}
                                 </div>
                               </div>
                             </div>
@@ -461,7 +461,7 @@ export default function App() {
                           <ArrowRight style={{ width: 18, height: 18, color: 'var(--accent)' }} />
                           <div style={{ fontSize: '0.85rem', color: '#f1f5f9' }}>
                             <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Next GTM Action: </span>
-                            {opp.nextAction}
+                            {opp.nextActionHint}
                           </div>
                         </div>
                       </div>

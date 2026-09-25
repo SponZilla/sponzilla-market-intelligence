@@ -8,19 +8,30 @@ export class EvidenceExtractor {
     for (const src of sources) {
       if (src.verificationStatus !== 'VERIFIED_LIVE') continue;
 
-      // Extract high-value sentences
+      // Extract high-value sentences from snippet
       const sentences = src.snippet
         .split(/(?<=[.!?])\s+/)
         .map(s => s.trim())
-        .filter(s => s.length > 20 && !s.toLowerCase().includes('javascript') && !s.toLowerCase().includes('cookie'));
+        .filter(
+          s =>
+            s.length > 20 &&
+            !s.toLowerCase().includes('javascript') &&
+            !s.toLowerCase().includes('cookie') &&
+            !s.toLowerCase().includes('enable cookies')
+        );
 
-      const selectedSentences = sentences.slice(0, 2);
+      const selectedSentences = sentences.length > 0 ? sentences.slice(0, 2) : [src.snippet.substring(0, 200)];
 
       for (const factSnippet of selectedSentences) {
         // Determine source type
         let sourceType = 'Company Announcement';
         const urlLower = src.url.toLowerCase();
-        if (urlLower.includes('/careers') || urlLower.includes('/jobs') || urlLower.includes('greenhouse') || urlLower.includes('linkedin')) {
+        if (
+          urlLower.includes('/careers') ||
+          urlLower.includes('/jobs') ||
+          urlLower.includes('greenhouse') ||
+          urlLower.includes('linkedin')
+        ) {
           sourceType = 'Careers / Hiring Portal';
         } else if (urlLower.includes('/press') || urlLower.includes('/news') || urlLower.includes('/blog')) {
           sourceType = 'Newsroom / Press Release';
@@ -28,10 +39,10 @@ export class EvidenceExtractor {
           sourceType = 'Industry Publication';
         }
 
-        const claim = `${companyName} announced operational & marketing activity in "${src.title.substring(0, 60)}"`;
-        const fact = `The verified source reports: "${factSnippet}"`;
-        const aiInference = `This confirmed fact indicates an active expansion window and commercial momentum for ${companyName}.`;
-        const suggestedAngle = `Target ${companyName}'s marketing team with structured sponsorship & partner activation packages during this growth cycle.`;
+        const claim = `${companyName} verified activity in "${src.title.substring(0, 60)}"`;
+        const fact = `The verified public source reports: "${factSnippet}"`;
+        const aiInference = `This confirmed fact indicates potential GTM commercial activity and market presence for ${companyName}.`;
+        const opportunity = `Target ${companyName}'s marketing & GTM team with structured partnership & activation proposals during this cycle.`;
 
         evidenceList.push({
           id: `ev_${crypto.randomBytes(6).toString('hex')}`,
@@ -40,12 +51,12 @@ export class EvidenceExtractor {
             title: src.title,
             url: src.url,
             type: sourceType,
-            publishedAt: src.publishedDate || new Date().toISOString().split('T')[0],
+            publishedAt: src.publishedDate || null,
             verified: true
           },
           fact,
           aiInference,
-          suggestedAngle,
+          opportunity,
           sourceId: src.id,
           confidenceScore: 0.95
         });

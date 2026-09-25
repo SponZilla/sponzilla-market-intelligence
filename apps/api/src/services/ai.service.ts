@@ -17,19 +17,20 @@ export class AIAnalyzer {
     evidence: Evidence[],
     signals: Signal[]
   ): Promise<AIAnalysisResult> {
-    // CRITICAL HONESTY RULE: If no verified evidence was found, return no_verified_opportunity_found
-    if (evidence.length === 0) {
+    // CRITICAL HONESTY RULE (Requirement 22): If no verified evidence was found, return no_verified_opportunity_found
+    if (!evidence || evidence.length === 0) {
       return {
         audience: 'Unknown / Insufficient Data',
-        marketingNeed: 'No verified marketing need could be determined from reliable sources.',
+        marketingNeed: 'No verified marketing need could be determined from reliable public sources.',
         aiInference: {
           summary: 'No verified GTM opportunity found due to lack of reachable evidence sources.',
-          groundedReasoning: 'No factual claims could be verified from public web research. SponZilla strictly refrains from inventing opportunities or fabricating sources.',
+          groundedReasoning:
+            'No factual claims could be verified from public web research. SponZilla strictly refrains from inventing opportunities or fabricating sources.',
           assumptions: ['No assumptions made because zero factual evidence was verified.'],
           unsupportedClaimsWarning: 'No sufficiently reliable and verifiable source was found.'
         },
         confidence: 'LOW',
-        confidenceReason: 'No sufficiently reliable and verifiable source was found.',
+        confidenceReason: 'No sufficiently reliable and verifiable public sources reachable.',
         recommendation: 'Do not pursue GTM outreach until verified company signals are published.',
         status: 'no_verified_opportunity_found',
         nextAction: 'Re-run intelligence pipeline when new press releases or public signals are available.'
@@ -48,18 +49,24 @@ export class AIAnalyzer {
 
     // Grounded Deterministic Inference Engine
     const signalTypes = signals.map(s => s.type);
-    const hasCampus = signalTypes.includes('youth_campus_campaign') || signalTypes.includes('college_event_activity') || signalTypes.includes('sponsorship_announcement') || signalTypes.includes('event_sponsorship');
+    const hasCampus =
+      signalTypes.includes('youth_campus_campaign') ||
+      signalTypes.includes('college_event_activity') ||
+      signalTypes.includes('sponsorship_announcement') ||
+      signalTypes.includes('event_sponsorship');
     const hasHiring = signalTypes.includes('marketing_hiring');
     const hasStore = signalTypes.includes('store_opening') || signalTypes.includes('new_location');
 
-    const confidence: 'HIGH' | 'MEDIUM' | 'LOW' = evidence.length >= 3 && signals.length >= 2 ? 'HIGH' : 'MEDIUM';
+    const confidence: 'HIGH' | 'MEDIUM' | 'LOW' =
+      evidence.length >= 3 && signals.length >= 2 ? 'HIGH' : evidence.length >= 1 ? 'MEDIUM' : 'LOW';
+
     const confidenceReason = `Confidence score calculated from ${evidence.length} verified live HTTP sources and ${signals.length} detected signals.`;
 
     const targetAudience = hasCampus
       ? 'Gen-Z College Students & Campus Brand Ambassadors (Ages 18-24)'
       : hasStore
-      ? 'Urban Fitness Enthusiasts & Local Gym Community Members'
-      : `${input.companyName} Core Consumer & Active Audience`;
+      ? 'Urban Consumers & Local Community Members'
+      : `${input.companyName} Core Consumer & Active Target Audience`;
 
     const marketingNeed = hasHiring
       ? `${input.companyName} is expanding field marketing operations based on verified hiring signals.`
@@ -106,14 +113,14 @@ export class AIAnalyzer {
 You are SponZilla's GTM Architect. Analyze these VERIFIED FACTS for ${input.companyName}:
 
 VERIFIED EVIDENCE:
-${evidence.map((e, i) => `${i+1}. Claim: "${e.claim}" | Fact: "${e.fact}" (Source: ${e.source.url})`).join('\n')}
+${evidence.map((e, i) => `${i + 1}. Claim: "${e.claim}" | Fact: "${e.fact}" (Source: ${e.source.url})`).join('\n')}
 
 DETECTED SIGNALS:
 ${signals.map(s => `- ${s.type}: ${s.title}`).join('\n')}
 
 INSTRUCTIONS:
 - Derive a cautious GTM recommendation grounded ONLY in the evidence provided.
-- Do NOT invent facts, contacts, or budgets.
+- Do NOT invent facts, contacts, decision makers, or budgets.
 - Return valid JSON matching:
 {
   "audience": "string",
@@ -151,19 +158,19 @@ INSTRUCTIONS:
     const content = JSON.parse(json.choices[0].message.content);
 
     return {
-      audience: content.audience,
-      marketingNeed: content.marketingNeed,
+      audience: content.audience || `${input.companyName} Audience`,
+      marketingNeed: content.marketingNeed || `GTM activation for ${input.companyName}`,
       aiInference: {
-        summary: content.summary,
-        groundedReasoning: content.groundedReasoning,
+        summary: content.summary || `Verified activity for ${input.companyName}`,
+        groundedReasoning: content.groundedReasoning || 'Grounded in verified public sources.',
         assumptions: content.assumptions || [],
         unsupportedClaimsWarning: null
       },
-      confidence: content.confidence || 'MEDIUM',
+      confidence: content.confidence === 'HIGH' || content.confidence === 'LOW' ? content.confidence : 'MEDIUM',
       confidenceReason: content.confidenceReason || 'Grounded in verified LLM evidence reasoning.',
-      recommendation: content.recommendation,
+      recommendation: content.recommendation || `Initiate outreach for ${input.companyName}`,
       status: 'NEW',
-      nextAction: content.nextAction
+      nextAction: content.nextAction || 'Send proposal'
     };
   }
 }

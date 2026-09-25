@@ -10,17 +10,17 @@ interface SignalPattern {
 const SIGNAL_PATTERNS: SignalPattern[] = [
   {
     type: 'product_launch',
-    keywords: ['launch', 'unveil', 'roll out', 'new product', 'new feature', 'announce', 'release', 'introduce'],
+    keywords: ['launch', 'unveil', 'roll out', 'new product', 'new feature', 'announce', 'release', 'introduce', 'drop'],
     titleTemplate: (co) => `Product Launch Signal for ${co}`
   },
   {
     type: 'store_opening',
-    keywords: ['flagship', 'store opening', 'retail hub', 'soho', 'grand opening', 'opening'],
+    keywords: ['flagship', 'store opening', 'retail hub', 'soho', 'grand opening', 'opening', 'retail store'],
     titleTemplate: (co) => `Store Opening Signal for ${co}`
   },
   {
     type: 'regional_expansion',
-    keywords: ['regional', 'statewide', 'nationwide', 'expand', 'expansion', 'region'],
+    keywords: ['regional', 'statewide', 'nationwide', 'expand', 'expansion', 'region', 'global expansion'],
     titleTemplate: (co) => `Regional Expansion Signal for ${co}`
   },
   {
@@ -30,37 +30,37 @@ const SIGNAL_PATTERNS: SignalPattern[] = [
   },
   {
     type: 'marketing_campaign',
-    keywords: ['campaign', 'brand campaign', 'outdoor', 'digital media', 'ad', 'marketing strategy', 'promo'],
+    keywords: ['campaign', 'brand campaign', 'outdoor', 'digital media', 'ad', 'marketing strategy', 'promo', 'billboard'],
     titleTemplate: (co) => `Marketing Campaign Signal for ${co}`
   },
   {
     type: 'youth_campus_campaign',
-    keywords: ['youth', 'campus', 'student', 'gen-z', 'university', 'college tour'],
+    keywords: ['youth', 'campus', 'student', 'gen-z', 'university', 'college tour', 'back to school'],
     titleTemplate: (co) => `Youth & Campus Campaign Signal for ${co}`
   },
   {
     type: 'sponsorship_announcement',
-    keywords: ['sponsorship', 'sponsor', 'partner', 'partnership', 'official partner', 'deal'],
+    keywords: ['sponsorship', 'sponsor', 'partner', 'partnership', 'official partner', 'deal', 'renews partnership'],
     titleTemplate: (co) => `Sponsorship Announcement Signal for ${co}`
   },
   {
     type: 'event_sponsorship',
-    keywords: ['event sponsorship', 'festival', 'concert', 'marathon', 'tournament', 'esports', 'expo'],
+    keywords: ['event sponsorship', 'festival', 'concert', 'marathon', 'tournament', 'esports', 'expo', 'championship'],
     titleTemplate: (co) => `Event Sponsorship Signal for ${co}`
   },
   {
     type: 'marketing_hiring',
-    keywords: ['hiring', 'field marketing', 'recruiting', 'manager', 'street team', 'director of marketing', 'career', 'job'],
+    keywords: ['hiring', 'field marketing', 'recruiting', 'manager', 'street team', 'director of marketing', 'marketing lead'],
     titleTemplate: (co) => `Marketing Hiring Signal for ${co}`
   },
   {
     type: 'new_location',
-    keywords: ['new location', 'new branch', 'new office', 'site', 'opened in'],
+    keywords: ['new location', 'new branch', 'new office', 'site', 'opened in', 'headquarters'],
     titleTemplate: (co) => `New Location Signal for ${co}`
   },
   {
     type: 'influencer_campaign',
-    keywords: ['influencer', 'creator', 'ambassador', 'tiktok', 'instagram', 'influencers', 'nil'],
+    keywords: ['influencer', 'creator', 'ambassador', 'tiktok', 'instagram', 'influencers', 'nil', 'brand ambassador'],
     titleTemplate: (co) => `Influencer Campaign Signal for ${co}`
   },
   {
@@ -72,6 +72,11 @@ const SIGNAL_PATTERNS: SignalPattern[] = [
 
 export class SignalDetector {
   detectSignals(companyName: string, evidence: Evidence[]): Signal[] {
+    // HONESTY RULE: If no evidence exists, return 0 signals
+    if (!evidence || evidence.length === 0) {
+      return [];
+    }
+
     const signals: Signal[] = [];
     const now = new Date().toISOString();
 
@@ -101,7 +106,7 @@ export class SignalDetector {
       }
     }
 
-    // Default general growth signal if evidence exists
+    // Default general growth signal only if evidence exists but no specific signal pattern matched
     if (signals.length === 0 && evidence.length > 0) {
       const firstEv = evidence[0];
       signals.push({

@@ -1,9 +1,19 @@
 import { CompanyInput, Source } from '@sponzilla/shared';
 import crypto from 'crypto';
 import { SourceVerifier } from './source.verifier';
+import { getSearchProvider } from './research/search-provider.factory';
 
 export interface ISourceProvider {
   fetchSources(input: CompanyInput): Promise<Source[]>;
+}
+
+export function extractDomain(urlStr: string): string {
+  try {
+    const u = new URL(urlStr.startsWith('http') ? urlStr : `https://${urlStr}`);
+    return u.hostname.toLowerCase().replace(/^www\./, '');
+  } catch {
+    return '';
+  }
 }
 
 export function isCareerUrl(url: string): boolean {
@@ -20,8 +30,79 @@ export function isCareerUrl(url: string): boolean {
     lower.includes('linkedin.com/company/') ||
     lower.includes('linkedin.com/jobs') ||
     lower.includes('job-boards') ||
-    lower.includes('recruitment')
+    lower.includes('recruitment') ||
+    lower.includes('work-with-us') ||
+    lower.includes('join-our-team') ||
+    lower.includes('talent')
   );
+}
+
+export function isCareerOrIrrelevantUrl(url: string, companyName: string, companyWebsiteUrl: string): boolean {
+  if (isCareerUrl(url)) return true;
+
+  const lowerUrl = url.toLowerCase();
+
+  // Exclude generic administrative / login / policy / search / social media links
+  if (
+    lowerUrl.includes('google.') ||
+    lowerUrl.includes('duckduckgo.') ||
+    lowerUrl.includes('bing.com') ||
+    lowerUrl.includes('facebook.com') ||
+    lowerUrl.includes('twitter.com') ||
+    lowerUrl.includes('x.com') ||
+    lowerUrl.includes('instagram.com') ||
+    lowerUrl.includes('tiktok.com') ||
+    lowerUrl.includes('youtube.com') ||
+    lowerUrl.includes('/login') ||
+    lowerUrl.includes('/privacy') ||
+    lowerUrl.includes('/terms') ||
+    lowerUrl.includes('/cart') ||
+    lowerUrl.includes('/checkout') ||
+    lowerUrl.includes('/account') ||
+    lowerUrl.includes('/register') ||
+    lowerUrl.includes('/signup')
+  ) {
+    return true;
+  }
+
+  // Exclude third-party e-commerce marketplaces / resellers / unrelated aggregators
+  const targetDomain = extractDomain(companyWebsiteUrl);
+  const candidateDomain = extractDomain(url);
+
+  const isTargetDomain =
+    candidateDomain &&
+    (candidateDomain === targetDomain ||
+      candidateDomain.endsWith('.' + targetDomain) ||
+      targetDomain.endsWith('.' + candidateDomain));
+
+  if (!isTargetDomain) {
+    const BLACKLISTED_AGGREGATORS = [
+      'myntra.com',
+      'amazon.',
+      'ebay.',
+      'flipkart.com',
+      'hypefly.co.in',
+      'culture-circle.com',
+      'sneakflyy.in',
+      'walmart.com',
+      'target.com',
+      'etsy.com',
+      'aliexpress.com',
+      'poshmark.com',
+      'depop.com',
+      'stockx.com',
+      'goat.com',
+      'liquide.life',
+      'liquid.trade',
+      'chemistrylearner.com'
+    ];
+
+    if (BLACKLISTED_AGGREGATORS.some(black => candidateDomain.includes(black))) {
+      return true; // Exclude third-party marketplace/reseller/unrelated links
+    }
+  }
+
+  return false;
 }
 
 export class SourceProvider implements ISourceProvider {
@@ -36,113 +117,59 @@ export class SourceProvider implements ISourceProvider {
     try {
       const baseUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
       const urlObj = new URL(baseUrl);
-      
-      if (!isCareerUrl(baseUrl)) candidateUrls.add(baseUrl);
-      
+
+      if (!isCareerOrIrrelevantUrl(baseUrl, companyName, websiteUrl)) candidateUrls.add(baseUrl);
+
       const newsUrl = `${urlObj.origin}/news`;
       const pressUrl = `${urlObj.origin}/press`;
       const aboutUrl = `${urlObj.origin}/about`;
       const blogUrl = `${urlObj.origin}/blog`;
 
-      if (!isCareerUrl(newsUrl)) candidateUrls.add(newsUrl);
-      if (!isCareerUrl(pressUrl)) candidateUrls.add(pressUrl);
-      if (!isCareerUrl(aboutUrl)) candidateUrls.add(aboutUrl);
-      if (!isCareerUrl(blogUrl)) candidateUrls.add(blogUrl);
+      if (!isCareerOrIrrelevantUrl(newsUrl, companyName, websiteUrl)) candidateUrls.add(newsUrl);
+      if (!isCareerOrIrrelevantUrl(pressUrl, companyName, websiteUrl)) candidateUrls.add(pressUrl);
+      if (!isCareerOrIrrelevantUrl(aboutUrl, companyName, websiteUrl)) candidateUrls.add(aboutUrl);
+      if (!isCareerOrIrrelevantUrl(blogUrl, companyName, websiteUrl)) candidateUrls.add(blogUrl);
     } catch {}
 
-    // 2. Perform Live Web Search via DuckDuckGo HTML Endpoint or Search API
+    // 2. Resolve Search Provider via Factory & perform search
+    const provider = getSearchProvider();
+    console.log(`[SourceProvider] Using search provider: "${provider.name}" for company "${companyName}"`);
+
     const searchQuery = `${companyName} ${input.category || ''} marketing campaign sponsorship product launch 2024 2025`;
-    const searchUrls = await this.performLiveWebSearch(searchQuery, companyName);
-    
-    searchUrls.forEach(url => {
-      if (!isCareerUrl(url)) {
-        candidateUrls.add(url);
+    const searchResults = await provider.search(searchQuery, companyName);
+
+    searchResults.forEach(res => {
+      if (res.url && res.url.startsWith('http') && !isCareerOrIrrelevantUrl(res.url, companyName, websiteUrl)) {
+        candidateUrls.add(res.url);
       }
     });
 
-    // 3. Verify Reachability and Relevance for all non-career candidate URLs
-    const verifiedSources: Source[] = [];
+    // 3. Verify Reachability, Relevance, and Priority Score for all candidate URLs
+    const verifiedCandidates: { source: Source; priorityScore: number }[] = [];
     const now = new Date().toISOString();
 
     for (const url of candidateUrls) {
-      if (isCareerUrl(url)) continue;
-      if (verifiedSources.length >= 6) break;
+      if (isCareerOrIrrelevantUrl(url, companyName, websiteUrl)) continue;
 
-      const verification = await this.verifier.verifyUrl(url, companyName);
+      const verification = await this.verifier.verifyUrl(url, companyName, websiteUrl);
       if (verification.isVerified && verification.snippet.length > 20) {
-        verifiedSources.push({
-          id: `src_${crypto.randomBytes(6).toString('hex')}`,
-          url: verification.url,
-          title: verification.title,
-          publishedDate: verification.publishedDate,
-          snippet: verification.snippet,
-          verificationStatus: 'VERIFIED_LIVE',
-          capturedAt: now
+        verifiedCandidates.push({
+          source: {
+            id: `src_${crypto.randomBytes(6).toString('hex')}`,
+            url: verification.url,
+            title: verification.title,
+            publishedDate: verification.publishedDate,
+            snippet: verification.snippet,
+            verificationStatus: 'VERIFIED_LIVE',
+            capturedAt: now
+          },
+          priorityScore: verification.priorityScore
         });
       }
     }
 
-    return verifiedSources;
-  }
-
-  /**
-   * Performs real live web search using DuckDuckGo HTML scraper or process.env search key
-   */
-  private async performLiveWebSearch(query: string, companyName: string): Promise<string[]> {
-    const urls: string[] = [];
-
-    // Optional Tavily Search API Integration
-    if (process.env.TAVILY_API_KEY) {
-      try {
-        const res = await fetch('https://api.tavily.com/search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            api_key: process.env.TAVILY_API_KEY,
-            query,
-            search_depth: 'basic',
-            max_results: 6
-          }),
-          signal: AbortSignal.timeout(6000)
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.results && Array.isArray(data.results)) {
-            data.results.forEach((r: any) => {
-              if (r.url && r.url.startsWith('http') && !isCareerUrl(r.url)) {
-                urls.push(r.url);
-              }
-            });
-            if (urls.length > 0) return urls;
-          }
-        }
-      } catch {}
-    }
-
-    // Live Free DuckDuckGo HTML Search Scraper
-    try {
-      const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-      const res = await fetch(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-        },
-        signal: AbortSignal.timeout(6000)
-      });
-
-      if (res.ok) {
-        const html = await res.text();
-        const uddgMatches = html.matchAll(/uddg=([^&"']+)/g);
-        for (const match of uddgMatches) {
-          try {
-            const decodedUrl = decodeURIComponent(match[1]);
-            if (decodedUrl.startsWith('http') && !decodedUrl.includes('duckduckgo.com') && !decodedUrl.includes('google.com') && !isCareerUrl(decodedUrl)) {
-              urls.push(decodedUrl);
-            }
-          } catch {}
-        }
-      }
-    } catch {}
-
-    return urls;
+    // Sort by priorityScore descending and return top 6 sources
+    verifiedCandidates.sort((a, b) => b.priorityScore - a.priorityScore);
+    return verifiedCandidates.slice(0, 6).map(item => item.source);
   }
 }

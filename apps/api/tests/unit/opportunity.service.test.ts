@@ -33,7 +33,7 @@ describe('OpportunityService & Contract Validation Unit Tests', () => {
     assert.strictEqual(run.status, 'COMPLETED');
     assert.notStrictEqual(run.opportunity, null);
     if (run.opportunity) {
-      assert.strictEqual(run.opportunity.status, 'no_verified_opportunity_found');
+      assert.strictEqual(run.opportunity.qualificationStatus, 'NO_VERIFIED_OPPORTUNITY');
       assert.strictEqual(run.opportunity.confidence, 'LOW');
       assert.strictEqual(run.opportunity.evidence.length, 0);
       assert.strictEqual(run.opportunity.signals.length, 0);

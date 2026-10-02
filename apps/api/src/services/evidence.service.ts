@@ -42,7 +42,7 @@ export class EvidenceExtractor {
         const claim = `${companyName} verified activity in "${src.title.substring(0, 60)}"`;
         const fact = `The verified public source reports: "${factSnippet}"`;
         const aiInference = `This confirmed fact indicates potential GTM commercial activity and market presence for ${companyName}.`;
-        const opportunity = `Target ${companyName}'s marketing & GTM team with structured partnership & activation proposals during this cycle.`;
+        const suggestedAngle = `Target ${companyName}'s marketing & GTM team with structured partnership & activation proposals during this cycle.`;
 
         evidenceList.push({
           id: `ev_${crypto.randomBytes(6).toString('hex')}`,
@@ -56,7 +56,7 @@ export class EvidenceExtractor {
           },
           fact,
           aiInference,
-          opportunity,
+          suggestedAngle,
           sourceId: src.id,
           confidenceScore: 0.95
         });

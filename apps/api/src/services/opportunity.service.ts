@@ -3,6 +3,7 @@ import { EvidenceExtractor } from './evidence.service';
 import { CompanyInput, CompanyInputSchema, Opportunity, OpportunitySchema, ResearchRun, Source } from '@sponzilla/shared';
 import { SignalDetector } from './signal.service';
 import { SourceProvider } from './source.provider';
+import { buildOpportunityV1 } from './opportunity.mapper';
 import crypto from 'crypto';
 
 export class OpportunityService {
@@ -58,34 +59,25 @@ export class OpportunityService {
       console.log(`[OpportunityService] [Step 4/5] Executing AI analysis...`);
       const aiAnalysis: AIAnalysisResult = await this.aiAnalyzer.analyze(input, evidence, signals);
 
-      // 6. Build Opportunity Object
+      // 6. Build & Validate Opportunity Object via canonical mapper
       const oppId = `opp_${crypto.randomBytes(8).toString('hex')}`;
-      const unvalidatedOpportunity: Opportunity = {
+      console.log(`[OpportunityService] [Step 5/5] Building & validating OpportunityV1 contract schema...`);
+      const opportunity: Opportunity = buildOpportunityV1({
         id: oppId,
-        company: {
-          name: input.companyName,
-          websiteUrl: input.websiteUrl,
-          location: input.location || null,
-          category: input.category || null,
-        },
-        signals,
+        companyInput: input,
         evidence,
+        signals,
         audience: aiAnalysis.audience,
         marketingNeed: aiAnalysis.marketingNeed,
         aiInference: aiAnalysis.aiInference,
         confidence: aiAnalysis.confidence,
         confidenceReason: aiAnalysis.confidenceReason,
         recommendation: aiAnalysis.recommendation,
-        status: aiAnalysis.status,
-        nextAction: aiAnalysis.nextAction,
-        outcome: null,
-        createdAt: now,
-      };
-
-      // 7. Validate Opportunity Object against Canonical Contract
-      console.log(`[OpportunityService] [Step 5/5] Validating OpportunityV1 contract schema...`);
-      const opportunity: Opportunity = OpportunitySchema.parse(unvalidatedOpportunity);
-      console.log(`[OpportunityService] OpportunityV1 successfully validated! (Status: ${opportunity.status}, Confidence: ${opportunity.confidence})`);
+        nextActionHint: aiAnalysis.nextAction,
+        aiStatus: aiAnalysis.status,
+        producedAt: now,
+      });
+      console.log(`[OpportunityService] OpportunityV1 successfully validated! (Status: ${opportunity.qualificationStatus}, Confidence: ${opportunity.confidence})`);
 
       const completedRun: ResearchRun = {
         ...initialRun,

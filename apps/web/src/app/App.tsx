@@ -126,21 +126,19 @@ export default function App() {
             <Zap style={{ color: '#fff', width: 24, height: 24 }} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <h1 className="brand-title">SPONZILLA</h1>
-              <span className="brand-tag">VERIFIED SOURCE → FACT → INFERENCE → OPPORTUNITY</span>
+              <span className="brand-tag">FACT GROUNDING PIPELINE</span>
             </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 2 }}>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: 2 }}>
               Strict Fact vs AI Inference Grounding Pipeline (0 Dummy URLs)
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ fontSize: '0.8rem', color: '#4ade80', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(34, 197, 94, 0.1)', padding: '0.4rem 0.8rem', borderRadius: 8, border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-            <Globe style={{ width: 14, height: 14 }} />
-            Live Web Crawl Active
-          </div>
+        <div className="header-status-badge">
+          <Globe style={{ width: 14, height: 14 }} />
+          Live Web Crawl Active
         </div>
       </header>
 
@@ -326,12 +324,12 @@ export default function App() {
               ) : opp ? (
                 <div className="glass-panel">
                   {/* Top Bar */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                  <div className="opp-header-flex">
                     <div>
-                      <h2 style={{ fontSize: '1.75rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff, #c7d2fe)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      <h2 style={{ fontSize: '1.75rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff, #c7d2fe)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', wordBreak: 'break-word' }}>
                         {opp.company.name}
                       </h2>
-                      <a href={opp.company.websiteUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#a5b4fc', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: 4 }}>
+                      <a href={opp.company.websiteUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: '#a5b4fc', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: 4, wordBreak: 'break-all' }}>
                         {opp.company.websiteUrl} <ExternalLink style={{ width: 12, height: 12 }} />
                       </a>
                     </div>
@@ -380,8 +378,8 @@ export default function App() {
                             >
                               {/* 1. SIGNAL TITLE */}
                               {matchingSignal && (
-                                <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <div className="signal-badge" style={{ fontSize: '0.8rem', padding: '0.3rem 0.65rem' }}>
+                                <div style={{ marginBottom: '1rem' }}>
+                                  <div className="signal-badge">
                                     ⚡ SIGNAL: {matchingSignal.type.replace('_', ' ').toUpperCase()} — {matchingSignal.title}
                                   </div>
                                 </div>
@@ -389,7 +387,7 @@ export default function App() {
 
                               {/* 2. VERIFIED EVIDENCE CARD */}
                               <div style={{ background: 'rgba(34, 197, 94, 0.06)', border: '1px solid rgba(34, 197, 94, 0.25)', borderRadius: 10, padding: '1rem', marginBottom: '1rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <div className="evidence-header-flex">
                                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                     <ShieldCheck style={{ width: 14, height: 14 }} /> Verified Evidence Record
                                   </div>
@@ -402,7 +400,7 @@ export default function App() {
                                   Claim: "{ev.claim}"
                                 </div>
 
-                                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <div className="evidence-meta-grid">
                                   <div><strong>Source Title:</strong> {ev.source.title}</div>
                                   <div><strong>Source Type:</strong> {ev.source.type}</div>
                                   <div><strong>Published Date:</strong> {ev.source.publishedAt || 'Recent'}</div>

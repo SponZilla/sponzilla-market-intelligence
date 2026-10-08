@@ -5,6 +5,8 @@
   "framework": "vite",
   "rewrites": [
     { "source": "/api/v1/research", "destination": "/api/v1/research" },
+    { "source": "/api/v1/health", "destination": "/api/v1/health" },
+    { "source": "/api/v1/opportunities", "destination": "/api/v1/opportunities" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

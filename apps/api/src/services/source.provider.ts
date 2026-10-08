@@ -33,7 +33,12 @@ export function isCareerUrl(url: string): boolean {
     lower.includes('recruitment') ||
     lower.includes('work-with-us') ||
     lower.includes('join-our-team') ||
-    lower.includes('talent')
+    lower.includes('talent') ||
+    lower.includes('hiring') ||
+    lower.includes('open-positions') ||
+    lower.includes('vacancies') ||
+    lower.includes('/apply') ||
+    lower.includes('employment')
   );
 }
 
@@ -113,22 +118,12 @@ export class SourceProvider implements ISourceProvider {
     const companyName = input.companyName.trim();
     const websiteUrl = input.websiteUrl.trim();
 
-    // 1. Add direct company domain & newsroom/press paths (EXCLUDING ALL CAREER / JOB PATHS)
+    // 1. Add direct company domain
     try {
       const baseUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
-      const urlObj = new URL(baseUrl);
-
-      if (!isCareerOrIrrelevantUrl(baseUrl, companyName, websiteUrl)) candidateUrls.add(baseUrl);
-
-      const newsUrl = `${urlObj.origin}/news`;
-      const pressUrl = `${urlObj.origin}/press`;
-      const aboutUrl = `${urlObj.origin}/about`;
-      const blogUrl = `${urlObj.origin}/blog`;
-
-      if (!isCareerOrIrrelevantUrl(newsUrl, companyName, websiteUrl)) candidateUrls.add(newsUrl);
-      if (!isCareerOrIrrelevantUrl(pressUrl, companyName, websiteUrl)) candidateUrls.add(pressUrl);
-      if (!isCareerOrIrrelevantUrl(aboutUrl, companyName, websiteUrl)) candidateUrls.add(aboutUrl);
-      if (!isCareerOrIrrelevantUrl(blogUrl, companyName, websiteUrl)) candidateUrls.add(blogUrl);
+      if (!isCareerOrIrrelevantUrl(baseUrl, companyName, websiteUrl)) {
+        candidateUrls.add(baseUrl);
+      }
     } catch {}
 
     // 2. Resolve Search Provider via Factory & perform search

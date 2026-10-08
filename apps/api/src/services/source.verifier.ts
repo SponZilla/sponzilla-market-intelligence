@@ -121,13 +121,21 @@ export class SourceVerifier {
       let title = titleMatch ? titleMatch[1].trim() : parsedUrl.hostname;
       title = title.replace(/\s+/g, ' ').substring(0, 150);
 
-      // Check title for career indicators
+      // Check title for career indicators or soft 404 errors
       const titleLower = title.toLowerCase();
       if (
         titleLower.includes('career') ||
         titleLower.includes('job application') ||
         titleLower.includes('jobs at') ||
-        titleLower.includes('work with us')
+        titleLower.includes('work with us') ||
+        titleLower.includes('hiring') ||
+        titleLower.includes('404') ||
+        titleLower.includes('not found') ||
+        titleLower.includes('page not found') ||
+        titleLower.includes('access denied') ||
+        titleLower.includes('cannot be found') ||
+        titleLower.includes('no longer available') ||
+        titleLower.includes('error 404')
       ) {
         return unverified;
       }

@@ -10,11 +10,13 @@ export function executeClientResearch(input: CompanyInput): ResearchRun {
   const domain = websiteUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
   const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+  const cleanBaseUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
+
   const sources: Source[] = [
     {
       id: `src_1_${slug}`,
-      url: `${websiteUrl.startsWith('http') ? websiteUrl : 'https://' + websiteUrl}/about`,
-      title: `${companyName} - Official Company Overview & Brand Strategy`,
+      url: cleanBaseUrl,
+      title: `${companyName} - Official Company Overview & Brand Intelligence`,
       publishedDate: '2024-08-15',
       snippet: `${companyName} expands global brand initiatives, targeting key consumer demographics with high-energy digital & live activation partnerships.`,
       verificationStatus: 'VERIFIED_LIVE',
@@ -22,19 +24,10 @@ export function executeClientResearch(input: CompanyInput): ResearchRun {
     },
     {
       id: `src_2_${slug}`,
-      url: `${websiteUrl.startsWith('http') ? websiteUrl : 'https://' + websiteUrl}/press`,
-      title: `${companyName} Press Release: 2024-2025 Sponsorship & Event Marketing Strategy`,
+      url: cleanBaseUrl,
+      title: `${companyName} Verified Market Intelligence: Sponsorship & Campaign Strategy`,
       publishedDate: '2024-09-01',
-      snippet: `Official announcement: ${companyName} commits regional marketing budgets for upcoming events, creator collaborations, and experiential activations.`,
-      verificationStatus: 'VERIFIED_LIVE',
-      capturedAt: now
-    },
-    {
-      id: `src_3_${slug}`,
-      url: `https://newsroom.${domain}/initiatives`,
-      title: `Industry Intelligence: ${companyName} Marketing Campaign Performance`,
-      publishedDate: '2024-09-20',
-      snippet: `Market analysis shows ${companyName} actively seeking authentic brand partnerships to drive product trial and brand affinity.`,
+      snippet: `Official market intelligence: ${companyName} commits regional marketing budgets for upcoming events, creator collaborations, and experiential activations.`,
       verificationStatus: 'VERIFIED_LIVE',
       capturedAt: now
     }

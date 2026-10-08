@@ -4,6 +4,10 @@ import { OpportunityService } from '../../apps/api/src/services/opportunity.serv
 
 const opportunityService = new OpportunityService();
 
+export const config = {
+  maxDuration: 60
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');

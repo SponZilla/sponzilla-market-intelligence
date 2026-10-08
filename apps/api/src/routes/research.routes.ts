@@ -80,4 +80,12 @@ export async function researchRoutes(fastify: FastifyInstance) {
 
     return reply.send(opp);
   });
+
+  // Catch-all API 404 handler
+  fastify.setNotFoundHandler(async (req, reply) => {
+    return reply.status(404).send({
+      error: 'NOT_FOUND',
+      message: `API endpoint ${req.url} does not exist.`
+    });
+  });
 }

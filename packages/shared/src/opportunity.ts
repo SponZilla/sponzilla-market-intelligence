@@ -87,6 +87,10 @@ export const SourceSchema = z.object({
     .enum(['VERIFIED_LIVE', 'UNVERIFIED', 'FAILED_REACHABILITY'])
     .default('VERIFIED_LIVE'),
   capturedAt: z.string(),
+  content: z.string().optional(),
+  contentHash: z.string().optional(),
+  retrievedAt: z.string().optional(),
+  priorityScore: z.number().min(0).max(100).optional(),
 });
 export type Source = z.infer<typeof SourceSchema>;
 

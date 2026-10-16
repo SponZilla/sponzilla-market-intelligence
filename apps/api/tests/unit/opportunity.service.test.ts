@@ -1,9 +1,14 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { OpportunityService } from '../../src/services/opportunity.service';
+import { createInMemoryOpportunityRepository } from '../../src/repositories/opportunity.repository';
+import { createInMemoryResearchRepository } from '../../src/repositories/research.repository';
 
 describe('OpportunityService & Contract Validation Unit Tests', () => {
-  const service = new OpportunityService();
+  const service = new OpportunityService(
+    createInMemoryResearchRepository(),
+    createInMemoryOpportunityRepository(),
+  );
 
   test('Rejects invalid empty companyName input format', async () => {
     const invalidInput = {

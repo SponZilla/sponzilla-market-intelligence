@@ -2,11 +2,18 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert';
 import { OpportunityService } from '../../src/services/opportunity.service';
 import { OpportunitySchema } from '@sponzilla/shared';
+import { createInMemoryOpportunityRepository } from '../../src/repositories/opportunity.repository';
+import { createInMemoryResearchRepository } from '../../src/repositories/research.repository';
 
-describe('Real Company Market Intelligence E2E Suite & Gymshark Handoff Validation', () => {
-  const service = new OpportunityService();
+describe('Real Company Market Intelligence E2E Suite & Gymshark Handoff Validation', { concurrency: false }, () => {
+  const service = new OpportunityService(
+    createInMemoryResearchRepository(),
+    createInMemoryOpportunityRepository(),
+  );
 
-  test('MANDATORY GYMSHARK VALIDATION: Real research → Evidence → OpportunityV1 schema handoff', async () => {
+  test('MANDATORY GYMSHARK VALIDATION: Real research → Evidence → OpportunityV1 schema handoff', { skip: process.env.RUN_LIVE_E2E !== 'true' }, async () => {
+    const originalProvider = process.env.SEARCH_PROVIDER;
+    process.env.SEARCH_PROVIDER = 'bing';
     const gymsharkInput = {
       companyName: 'Gymshark',
       websiteUrl: 'https://gymshark.com',
@@ -15,7 +22,13 @@ describe('Real Company Market Intelligence E2E Suite & Gymshark Handoff Validati
     };
 
     console.log('\n🦈 Running Mandatory Gymshark E2E Validation Test...');
-    const run = await service.executeResearchPipeline(gymsharkInput);
+    let run: Awaited<ReturnType<OpportunityService['executeResearchPipeline']>>;
+    try {
+      run = await service.executeResearchPipeline(gymsharkInput);
+    } finally {
+      if (originalProvider === undefined) delete process.env.SEARCH_PROVIDER;
+      else process.env.SEARCH_PROVIDER = originalProvider;
+    }
 
     assert.strictEqual(run.status, 'COMPLETED', `Gymshark research run status should be COMPLETED, got: ${run.error}`);
     assert.notStrictEqual(run.opportunity, null, 'Gymshark opportunity object must not be null');

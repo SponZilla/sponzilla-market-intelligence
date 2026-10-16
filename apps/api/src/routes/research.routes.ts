@@ -1,6 +1,8 @@
 import { CompanyInputSchema } from '@sponzilla/shared';
 import { FastifyInstance } from 'fastify';
 import { OpportunityService } from '../services/opportunity.service';
+import { requireResearchApiKey } from '../middleware/require-research-api-key';
+import { researchRateLimit } from '../middleware/research-rate-limit';
 
 const opportunityService = new OpportunityService();
 
@@ -15,7 +17,7 @@ export async function researchRoutes(fastify: FastifyInstance) {
   });
 
   // Trigger Research Pipeline
-  fastify.post('/api/v1/research', async (req, reply) => {
+  fastify.post('/api/v1/research', { preHandler: [researchRateLimit, requireResearchApiKey] }, async (req, reply) => {
     try {
       const parsedInput = CompanyInputSchema.parse(req.body);
       const result = await opportunityService.executeResearchPipeline(parsedInput);
@@ -46,9 +48,9 @@ export async function researchRoutes(fastify: FastifyInstance) {
   });
 
   // Get Research Run by ID
-  fastify.get('/api/v1/research/:runId', async (req, reply) => {
+  fastify.get('/api/v1/research/:runId', { preHandler: [researchRateLimit, requireResearchApiKey] }, async (req, reply) => {
     const { runId } = req.params as { runId: string };
-    const run = opportunityService.getResearchRun(runId);
+    const run = await opportunityService.getResearchRun(runId);
 
     if (!run) {
       return reply.status(404).send({
@@ -61,15 +63,15 @@ export async function researchRoutes(fastify: FastifyInstance) {
   });
 
   // List All Opportunities
-  fastify.get('/api/v1/opportunities', async (_req, reply) => {
-    const opportunities = opportunityService.getAllOpportunities();
+  fastify.get('/api/v1/opportunities', { preHandler: [researchRateLimit, requireResearchApiKey] }, async (_req, reply) => {
+    const opportunities = await opportunityService.getAllOpportunities();
     return reply.send({ opportunities, count: opportunities.length });
   });
 
   // Get Single Opportunity by ID
-  fastify.get('/api/v1/opportunities/:id', async (req, reply) => {
+  fastify.get('/api/v1/opportunities/:id', { preHandler: [researchRateLimit, requireResearchApiKey] }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const opp = opportunityService.getOpportunity(id);
+    const opp = await opportunityService.getOpportunity(id);
 
     if (!opp) {
       return reply.status(404).send({

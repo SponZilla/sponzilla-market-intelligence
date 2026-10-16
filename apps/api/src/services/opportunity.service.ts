@@ -4,6 +4,14 @@ import { CompanyInput, CompanyInputSchema, Opportunity, OpportunitySchema, Resea
 import { SignalDetector } from './signal.service';
 import { SourceProvider } from './source.provider';
 import { buildOpportunityV1 } from './opportunity.mapper';
+import {
+  opportunityRepository,
+  type OpportunityRepository,
+} from '../repositories/opportunity.repository';
+import {
+  researchRepository,
+  type ResearchRepository,
+} from '../repositories/research.repository';
 import crypto from 'crypto';
 
 export class OpportunityService {
@@ -12,9 +20,10 @@ export class OpportunityService {
   private signalDetector = new SignalDetector();
   private aiAnalyzer = new AIAnalyzer();
 
-  // In-memory store for MVP persistence
-  private researchRunsStore = new Map<string, ResearchRun>();
-  private opportunitiesStore = new Map<string, Opportunity>();
+  constructor(
+    private readonly researchStore: ResearchRepository = researchRepository,
+    private readonly opportunityStore: OpportunityRepository = opportunityRepository,
+  ) {}
 
   async executeResearchPipeline(rawInput: CompanyInput): Promise<ResearchRun> {
     const runId = `run_${crypto.randomBytes(8).toString('hex')}`;
@@ -37,7 +46,7 @@ export class OpportunityService {
       completedAt: null,
     };
 
-    this.researchRunsStore.set(runId, initialRun);
+    await this.researchStore.save(initialRun);
 
     try {
       // 2. Live Research & Source Retrieval
@@ -89,8 +98,8 @@ export class OpportunityService {
         completedAt: new Date().toISOString(),
       };
 
-      this.researchRunsStore.set(runId, completedRun);
-      this.opportunitiesStore.set(oppId, opportunity);
+      await this.researchStore.save(completedRun);
+      await this.opportunityStore.save(opportunity);
 
       return completedRun;
     } catch (err: any) {
@@ -101,20 +110,20 @@ export class OpportunityService {
         error: err?.message || 'Research pipeline execution failure',
         completedAt: new Date().toISOString(),
       };
-      this.researchRunsStore.set(runId, failedRun);
+      await this.researchStore.save(failedRun);
       return failedRun;
     }
   }
 
-  getResearchRun(runId: string): ResearchRun | undefined {
-    return this.researchRunsStore.get(runId);
+  async getResearchRun(runId: string): Promise<ResearchRun | undefined> {
+    return this.researchStore.findById(runId);
   }
 
-  getOpportunity(oppId: string): Opportunity | undefined {
-    return this.opportunitiesStore.get(oppId);
+  async getOpportunity(oppId: string): Promise<Opportunity | undefined> {
+    return this.opportunityStore.findById(oppId);
   }
 
-  getAllOpportunities(): Opportunity[] {
-    return Array.from(this.opportunitiesStore.values());
+  async getAllOpportunities(): Promise<Opportunity[]> {
+    return this.opportunityStore.list();
   }
 }

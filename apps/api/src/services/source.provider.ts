@@ -156,7 +156,11 @@ export class SourceProvider implements ISourceProvider {
             publishedDate: verification.publishedDate,
             snippet: verification.snippet,
             verificationStatus: 'VERIFIED_LIVE',
-            capturedAt: now
+            capturedAt: now,
+            content: verification.content,
+            contentHash: verification.contentHash,
+            retrievedAt: verification.retrievedAt,
+            priorityScore: verification.priorityScore,
           },
           priorityScore: verification.priorityScore
         });

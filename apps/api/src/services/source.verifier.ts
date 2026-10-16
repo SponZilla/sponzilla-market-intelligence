@@ -1,5 +1,6 @@
 import { isCareerOrIrrelevantUrl, extractDomain } from './source.provider';
 import { DateExtractor } from './date.extractor';
+import crypto from 'crypto';
 
 export interface VerifiedSourceResult {
   isVerified: boolean;
@@ -8,6 +9,9 @@ export interface VerifiedSourceResult {
   snippet: string;
   publishedDate: string | null;
   priorityScore: number;
+  content: string;
+  contentHash: string;
+  retrievedAt: string;
 }
 
 const REPUTABLE_MEDIA_DOMAINS = [
@@ -52,7 +56,10 @@ export class SourceVerifier {
       title: '',
       snippet: '',
       publishedDate: null,
-      priorityScore: 0
+      priorityScore: 0,
+      content: '',
+      contentHash: '',
+      retrievedAt: new Date().toISOString()
     };
 
     try {
@@ -145,26 +152,22 @@ export class SourceVerifier {
         html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) ||
         html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i);
 
-      let snippet = metaDescMatch ? metaDescMatch[1].trim() : '';
-
-      if (!snippet) {
-        // Fallback: extract clean text paragraphs
-        const cleanText = html
-          .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
-          .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        snippet = cleanText.substring(0, 400);
-      }
+      const content = html
+        .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '')
+        .replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const snippet = metaDescMatch ? metaDescMatch[1].trim() : content.substring(0, 400);
+      const retrievedAt = new Date().toISOString();
+      const contentHash = crypto.createHash('sha256').update(content).digest('hex');
 
       // Extract publication date & recency
       const recencyInfo = DateExtractor.extractDate(html);
 
       // Verify relevance: title, domain, or snippet must explicitly contain companyName keywords
       const companyKeywords = companyName.toLowerCase().split(/\s+/).filter(k => k.length > 2);
-      const textToSearch = (title + ' ' + snippet + ' ' + parsedUrl.hostname).toLowerCase();
+      const textToSearch = (title + ' ' + content + ' ' + parsedUrl.hostname).toLowerCase();
 
       const isRelevant =
         companyKeywords.some(kw => textToSearch.includes(kw)) ||
@@ -199,7 +202,10 @@ export class SourceVerifier {
         title: title || `${companyName} Verified Source`,
         snippet: snippet.substring(0, 500),
         publishedDate: recencyInfo.publishedDate,
-        priorityScore
+        priorityScore,
+        content: content.substring(0, 20000),
+        contentHash,
+        retrievedAt,
       };
     } catch {
       return unverified;

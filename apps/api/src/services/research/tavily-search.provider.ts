@@ -5,10 +5,10 @@ export class TavilySearchProvider implements ISearchProvider {
   private apiKey: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.TAVILY_API_KEY || '';
+    this.apiKey = apiKey || '';
     if (!this.apiKey) {
       throw new Error(
-        'SEARCH_PROVIDER=tavily configured, but TAVILY_API_KEY environment variable is missing. Please set TAVILY_API_KEY or change SEARCH_PROVIDER=duckduckgo.'
+        'SEARCH_PROVIDER=tavily configured, but TAVILY_API_KEY environment variable is missing.'
       );
     }
   }

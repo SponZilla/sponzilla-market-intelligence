@@ -1,4 +1,5 @@
 import { AIInference, CompanyInput, Evidence, Signal } from '@sponzilla/shared';
+import { z } from 'zod';
 
 export interface AIAnalysisResult {
   audience: string;
@@ -10,6 +11,19 @@ export interface AIAnalysisResult {
   status: 'NEW' | 'no_verified_opportunity_found';
   nextAction: string;
 }
+
+const AIAnalysisResponseSchema = z.object({
+  audience: z.string().min(1),
+  marketingNeed: z.string().min(1),
+  summary: z.string().min(1),
+  groundedReasoning: z.string().min(1),
+  assumptions: z.array(z.string()),
+  unsupportedClaimsWarning: z.string().nullable().optional(),
+  confidence: z.enum(['HIGH', 'MEDIUM', 'LOW']),
+  confidenceReason: z.string().min(1),
+  recommendation: z.string().min(1),
+  nextAction: z.string().min(1),
+});
 
 export class AIAnalyzer {
   async analyze(
@@ -155,22 +169,27 @@ INSTRUCTIONS:
 
     if (!res.ok) return null;
     const json = await res.json();
-    const content = JSON.parse(json.choices[0].message.content);
+    const rawContent = json.choices?.[0]?.message?.content;
+    if (typeof rawContent !== 'string') {
+      throw new Error('OpenAI response did not contain a JSON message.');
+    }
+
+    const parsed = AIAnalysisResponseSchema.parse(JSON.parse(rawContent));
 
     return {
-      audience: content.audience || `${input.companyName} Audience`,
-      marketingNeed: content.marketingNeed || `GTM activation for ${input.companyName}`,
+      audience: parsed.audience,
+      marketingNeed: parsed.marketingNeed,
       aiInference: {
-        summary: content.summary || `Verified activity for ${input.companyName}`,
-        groundedReasoning: content.groundedReasoning || 'Grounded in verified public sources.',
-        assumptions: content.assumptions || [],
-        unsupportedClaimsWarning: null
+        summary: parsed.summary,
+        groundedReasoning: parsed.groundedReasoning,
+        assumptions: parsed.assumptions,
+        unsupportedClaimsWarning: parsed.unsupportedClaimsWarning ?? null,
       },
-      confidence: content.confidence === 'HIGH' || content.confidence === 'LOW' ? content.confidence : 'MEDIUM',
-      confidenceReason: content.confidenceReason || 'Grounded in verified LLM evidence reasoning.',
-      recommendation: content.recommendation || `Initiate outreach for ${input.companyName}`,
+      confidence: parsed.confidence,
+      confidenceReason: parsed.confidenceReason,
+      recommendation: parsed.recommendation,
       status: 'NEW',
-      nextAction: content.nextAction || 'Send proposal'
+      nextAction: parsed.nextAction,
     };
   }
 }

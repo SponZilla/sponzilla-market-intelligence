@@ -5,10 +5,10 @@ export class BraveSearchProvider implements ISearchProvider {
   private apiKey: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.BRAVE_API_KEY || '';
+    this.apiKey = apiKey || '';
     if (!this.apiKey) {
       throw new Error(
-        'SEARCH_PROVIDER=brave configured, but BRAVE_API_KEY environment variable is missing. Please set BRAVE_API_KEY or change SEARCH_PROVIDER=duckduckgo.'
+        'SEARCH_PROVIDER=brave configured, but BRAVE_API_KEY environment variable is missing.'
       );
     }
   }

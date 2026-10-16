@@ -7,6 +7,7 @@ describe('Research API Routes Integration Tests', () => {
   const app = fastify();
 
   before(async () => {
+    process.env.RESEARCH_API_KEY = 'test-research-key';
     await app.register(researchRoutes);
     await app.ready();
   });
@@ -32,7 +33,8 @@ describe('Research API Routes Integration Tests', () => {
       url: '/api/v1/research',
       payload: {
         companyName: '' // invalid empty name
-      }
+      },
+      headers: { authorization: 'Bearer test-research-key' },
     });
 
     assert.strictEqual(response.statusCode, 400);

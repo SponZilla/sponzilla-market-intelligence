@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ResearchRun, OpportunityV1, CompanyInput, EvidenceV1, Source } from '@sponzilla/shared';
+import { ResearchRun, OpportunityV1, CompanyInput, EvidenceV1, Source, DecisionMakerV1 } from '@sponzilla/shared';
 import { 
   Zap, 
   Search, 
@@ -16,7 +16,10 @@ import {
   Lock,
   FileText,
   BrainCircuit,
-  Target
+  Target,
+  Users,
+  Copy,
+  Check
 } from 'lucide-react';
 
 const PRESET_COMPANIES: CompanyInput[] = [
@@ -148,6 +151,16 @@ export default function App() {
 
   const opp: OpportunityV1 | null = currentRun?.opportunity || null;
   const isNoOpportunity = opp?.qualificationStatus === 'NO_VERIFIED_OPPORTUNITY';
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyHook = (dm: DecisionMakerV1, id: string) => {
+    const firstName = dm.name ? dm.name.split(' ')[0] : 'there';
+    const text = `Hi ${firstName}, saw your work as ${dm.title || 'Leader'} at ${opp?.company.name || 'your team'}. We have verified high-intent sponsorship and audience alignment opportunities ready for review. Would love to send a brief 1-page overview.`;
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2500);
+  };
 
   return (
     <div className="container">
@@ -477,6 +490,193 @@ export default function App() {
                             </div>
                           );
                         })}
+                      </div>
+
+                      {/* 6. TARGET DECISION-MAKERS (ICP PIPELINE) */}
+                      <div
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.75)',
+                          border: '1px solid rgba(99, 102, 241, 0.3)',
+                          borderRadius: 14,
+                          padding: '1.25rem',
+                          marginBottom: '2rem',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '1rem',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Users style={{ width: 18, height: 18, color: '#818cf8' }} />
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                              Target Decision-Makers (ICP Pipeline)
+                            </h3>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              background: 'rgba(99, 102, 241, 0.15)',
+                              color: '#a5b4fc',
+                              border: '1px solid rgba(99, 102, 241, 0.3)',
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: 6,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                            }}
+                          >
+                            <ShieldCheck style={{ width: 12, height: 12, color: '#4ade80' }} />
+                            Grounded LinkedIn Verification
+                          </span>
+                        </div>
+
+                        {opp.decisionMakers && opp.decisionMakers.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                            {opp.decisionMakers.map((dm: DecisionMakerV1, idx: number) => {
+                              const dmKey = `dm_${idx}_${dm.linkedinUrl || dm.name}`;
+                              const isCopied = copiedId === dmKey;
+
+                              return (
+                                <div
+                                  key={dmKey}
+                                  style={{
+                                    background: 'rgba(255, 255, 255, 0.03)',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    borderRadius: 10,
+                                    padding: '1rem',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    gap: '0.75rem',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                    <div
+                                      style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#fff',
+                                        fontWeight: 700,
+                                        fontSize: '0.95rem',
+                                        flexShrink: 0,
+                                      }}
+                                    >
+                                      {dm.name
+                                        ? dm.name
+                                            .split(' ')
+                                            .map((p) => p[0])
+                                            .join('')
+                                            .slice(0, 2)
+                                            .toUpperCase()
+                                        : 'DM'}
+                                    </div>
+                                    <div>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>
+                                          👤 {dm.name || 'Decision Maker'}
+                                        </span>
+                                        <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
+                                          — {dm.title || 'Leadership'} @ {opp.company.name}
+                                        </span>
+                                      </div>
+                                      <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                                        Verified via live search snippet • Source URL provenance recorded
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    {dm.linkedinUrl && (
+                                      <a
+                                        href={dm.linkedinUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                          fontSize: '0.82rem',
+                                          fontWeight: 600,
+                                          background: 'rgba(10, 102, 194, 0.2)',
+                                          color: '#60a5fa',
+                                          border: '1px solid rgba(10, 102, 194, 0.4)',
+                                          padding: '0.4rem 0.75rem',
+                                          borderRadius: 6,
+                                          textDecoration: 'none',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '0.35rem',
+                                          transition: 'all 0.2s ease',
+                                        }}
+                                      >
+                                        View LinkedIn Profile <ExternalLink style={{ width: 13, height: 13 }} />
+                                      </a>
+                                    )}
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyHook(dm, dmKey)}
+                                      style={{
+                                        fontSize: '0.82rem',
+                                        fontWeight: 600,
+                                        background: isCopied ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                                        color: isCopied ? '#4ade80' : '#e2e8f0',
+                                        border: isCopied ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(255, 255, 255, 0.12)',
+                                        padding: '0.4rem 0.75rem',
+                                        borderRadius: 6,
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.35rem',
+                                        transition: 'all 0.2s ease',
+                                      }}
+                                    >
+                                      {isCopied ? (
+                                        <>
+                                          <Check style={{ width: 13, height: 13 }} />
+                                          Copied Pitch!
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy style={{ width: 13, height: 13 }} />
+                                          1-Click Message Copy
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.02)',
+                              border: '1px dashed rgba(255, 255, 255, 0.12)',
+                              borderRadius: 10,
+                              padding: '1.25rem',
+                              textAlign: 'center',
+                            }}
+                          >
+                            <div style={{ color: '#94a3b8', fontSize: '0.88rem', marginBottom: '0.25rem' }}>
+                              No public partnership decision-maker profiles verified via live search for {opp.company.name}.
+                            </div>
+                            <div style={{ color: '#64748b', fontSize: '0.78rem' }}>
+                              Strict Grounding Rule: Zero synthetic contacts fabricated without verified public profile provenance.
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Strategic Summary & Next Action */}

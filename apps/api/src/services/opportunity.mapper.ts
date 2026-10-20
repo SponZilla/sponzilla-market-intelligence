@@ -1,6 +1,7 @@
 import {
   parseOpportunityV1,
   type CompanyInput,
+  type DecisionMakerV1,
   type Evidence,
   type OpportunityV1,
   type Signal,
@@ -34,6 +35,7 @@ export interface BuildOpportunityV1Input {
   nextActionHint: string;
   /** AI analyzer legacy status → mapped to qualificationStatus */
   aiStatus: 'NEW' | 'no_verified_opportunity_found';
+  decisionMakers?: DecisionMakerV1[];
   producedAt: string;
 }
 
@@ -81,7 +83,7 @@ export function buildOpportunityV1(
         : ('QUALIFIED' as const),
     icpAssessment: null,
     buyerPersonas: [],
-    decisionMakers: [],
+    decisionMakers: rest.decisionMakers ?? [],
     producedAt,
   };
 

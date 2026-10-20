@@ -5,6 +5,10 @@ import { SignalDetector } from './signal.service';
 import { SourceProvider } from './source.provider';
 import { buildOpportunityV1 } from './opportunity.mapper';
 import {
+  DecisionMakerFinder,
+  IDecisionMakerFinder,
+} from './research/decision-maker.finder';
+import {
   GTMHandoffService,
   gtmHandoffService,
 } from './gtm/gtm-handoff.service';
@@ -24,12 +28,16 @@ export class OpportunityService {
   private evidenceExtractor = new EvidenceExtractor();
   private signalDetector = new SignalDetector();
   private aiAnalyzer = new AIAnalyzer();
+  private decisionMakerFinder: IDecisionMakerFinder;
 
   constructor(
     private readonly researchStore: ResearchRepository = researchRepository,
     private readonly opportunityStore: OpportunityRepository = opportunityRepository,
     private readonly gtmHandoff: GTMHandoffService = gtmHandoffService,
-  ) {}
+    decisionMakerFinder?: IDecisionMakerFinder,
+  ) {
+    this.decisionMakerFinder = decisionMakerFinder || new DecisionMakerFinder();
+  }
 
   async executeResearchPipeline(rawInput: CompanyInput): Promise<ResearchRun> {
     const runId = `run_${crypto.randomBytes(8).toString('hex')}`;
@@ -75,6 +83,14 @@ export class OpportunityService {
       console.log(`[OpportunityService] [Step 4/5] Executing AI analysis...`);
       const aiAnalysis: AIAnalysisResult = await this.aiAnalyzer.analyze(input, evidence, signals);
 
+      // 5b. Grounded LinkedIn Decision-Maker Discovery (site:linkedin.com/in)
+      console.log(`[OpportunityService] [Step 4b/5] Discovering real LinkedIn decision-makers...`);
+      let decisionMakers = await this.decisionMakerFinder.findDecisionMakers(input.companyName).catch((err) => {
+        console.warn(`[OpportunityService] Decision-maker discovery warning:`, err?.message || err);
+        return [];
+      });
+      console.log(`[OpportunityService] Discovered ${decisionMakers.length} verified LinkedIn decision-maker profiles.`);
+
       // 6. Build & Validate Opportunity Object via canonical mapper
       const oppId = `opp_${crypto.randomBytes(8).toString('hex')}`;
       console.log(`[OpportunityService] [Step 5/5] Building & validating OpportunityV1 contract schema...`);
@@ -91,6 +107,7 @@ export class OpportunityService {
         recommendation: aiAnalysis.recommendation,
         nextActionHint: aiAnalysis.nextAction,
         aiStatus: aiAnalysis.status,
+        decisionMakers,
         producedAt: now,
       });
       console.log(`[OpportunityService] OpportunityV1 successfully validated! (Status: ${opportunity.qualificationStatus}, Confidence: ${opportunity.confidence})`);

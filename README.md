@@ -1,15 +1,19 @@
-# SponZilla MVP — Architecture Scaffold
+# SponZilla — Market Intelligence Engine
 
-One-day MVP foundation for a research → evidence → signal → AI analysis → opportunity pipeline.
+Grounded research pipeline transforming raw company input and live web sources into verified marketing signals, evidence facts, and canonical `OpportunityV1` contracts for GTM execution.
 
-## Suggested stack
-- Backend: TypeScript + Node.js + Fastify
-- Validation/schema: Zod
-- Frontend: Next.js + TypeScript
-- Persistence: PostgreSQL + Prisma (or SQLite for the first local prototype)
-- Research: pluggable web-search/source provider
-- AI: OpenAI Responses API with structured JSON output
-- Tests: Vitest + Playwright
-- Deployment: one API + one web app; no microservices
+## Features
+- **Live Search & Source Verification**: Pluggable providers (Tavily, Brave, DuckDuckGo) verifying live HTTP 200 URLs.
+- **Evidence Extraction**: Facts strictly tied to source URLs and titles; zero fabricated facts.
+- **Signal Detection**: Detects product launches, store openings, marketing campaigns, sponsorships, and campus activity.
+- **Strict Grounding Rule**: Missing information remains `null`. Contacts, budgets, and sponsorship history are never invented. Client-side synthetic research is disabled in production.
+- **Automated GTM Handoff**: Qualified opportunities automatically POST to GTM ingest with Bearer authentication.
+- **Operator Loop & 5-Company Eval Gate**: Documented in [docs/OPERATOR_LOOP_AND_EVAL_GATE.md](./docs/OPERATOR_LOOP_AND_EVAL_GATE.md) and [docs/TEST_PLAN.md](./docs/TEST_PLAN.md).
 
-This repository is intentionally a scaffold. It does not implement the application.
+## Getting Started
+
+```bash
+npm install
+npm run build
+npm test
+```

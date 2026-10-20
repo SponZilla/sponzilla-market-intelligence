@@ -5,6 +5,11 @@ import { SignalDetector } from './signal.service';
 import { SourceProvider } from './source.provider';
 import { buildOpportunityV1 } from './opportunity.mapper';
 import {
+  GTMHandoffService,
+  gtmHandoffService,
+} from './gtm/gtm-handoff.service';
+import { config } from '../config';
+import {
   opportunityRepository,
   type OpportunityRepository,
 } from '../repositories/opportunity.repository';
@@ -23,6 +28,7 @@ export class OpportunityService {
   constructor(
     private readonly researchStore: ResearchRepository = researchRepository,
     private readonly opportunityStore: OpportunityRepository = opportunityRepository,
+    private readonly gtmHandoff: GTMHandoffService = gtmHandoffService,
   ) {}
 
   async executeResearchPipeline(rawInput: CompanyInput): Promise<ResearchRun> {
@@ -41,6 +47,7 @@ export class OpportunityService {
       evidence: [],
       signals: [],
       opportunity: null,
+      gtmHandoff: null,
       error: null,
       createdAt: now,
       completedAt: null,
@@ -88,6 +95,13 @@ export class OpportunityService {
       });
       console.log(`[OpportunityService] OpportunityV1 successfully validated! (Status: ${opportunity.qualificationStatus}, Confidence: ${opportunity.confidence})`);
 
+      // 7. Auto-POST qualified OpportunityV1 to GTM ingest (Handoff)
+      let gtmHandoffResult = null;
+      if (config.enableGtmAutoHandoff) {
+        console.log(`[OpportunityService] [Handoff] Initiating automatic GTM ingest handoff...`);
+        gtmHandoffResult = await this.gtmHandoff.postOpportunityToGTM(opportunity);
+      }
+
       const completedRun: ResearchRun = {
         ...initialRun,
         status: 'COMPLETED',
@@ -95,6 +109,7 @@ export class OpportunityService {
         evidence,
         signals,
         opportunity,
+        gtmHandoff: gtmHandoffResult,
         completedAt: new Date().toISOString(),
       };
 

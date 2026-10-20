@@ -13,4 +13,7 @@ export const config = {
   tavilyApiKey: process.env.TAVILY_API_KEY || '',
   braveApiKey: process.env.BRAVE_API_KEY || '',
   researchApiKey: process.env.RESEARCH_API_KEY || '',
+  gtmIngestUrl: process.env.GTM_INGEST_URL || 'http://127.0.0.1:3000/api/v1/opportunities/ingest',
+  gtmAdminApiKey: process.env.INTERNAL_ADMIN_API_KEY || process.env.GTM_ADMIN_API_KEY || '',
+  enableGtmAutoHandoff: process.env.ENABLE_GTM_AUTO_HANDOFF !== 'false',
 };

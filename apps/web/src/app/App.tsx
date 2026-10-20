@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ResearchRun, OpportunityV1, CompanyInput, EvidenceV1, Source } from '@sponzilla/shared';
-import { executeClientResearch } from './clientResearch';
 import { 
   Zap, 
   Search, 
@@ -99,16 +98,49 @@ export default function App() {
         return;
       }
 
-      // Fallback: If backend is unreachable or returned non-200, execute client research engine
-      console.warn('Backend API server unreachable or returned non-200. Executing client research fallback...');
-      const fallbackRun = executeClientResearch(payload);
-      setCurrentRun(fallbackRun);
-      setHistory(prev => [fallbackRun, ...prev.filter((h: ResearchRun) => h.id !== fallbackRun.id)]);
+      // Production Grounding Rule: If backend is unreachable or returned non-200,
+      // never invent synthetic research. Surface honest error state.
+      let errorMessage = 'Market Intelligence API is unreachable. In accordance with SponZilla grounding rules, no synthetic sources or opportunities are fabricated.';
+      if (res && !res.ok) {
+        try {
+          const errJson = await res.json();
+          errorMessage = errJson?.message || errJson?.error || `API returned HTTP ${res.status}`;
+        } catch {
+          errorMessage = `API returned HTTP ${res.status}: ${res.statusText}`;
+        }
+      }
+
+      console.warn(`[MarketIntelligence] Research request failed: ${errorMessage}`);
+      const failedRun: ResearchRun = {
+        id: `run_err_${Date.now()}`,
+        companyInput: payload,
+        status: 'FAILED',
+        sources: [],
+        evidence: [],
+        signals: [],
+        opportunity: null,
+        gtmHandoff: null,
+        error: errorMessage,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      };
+      setCurrentRun(failedRun);
     } catch (err: any) {
       console.error('Failed to execute research pipeline:', err);
-      const fallbackRun = executeClientResearch(payload);
-      setCurrentRun(fallbackRun);
-      setHistory(prev => [fallbackRun, ...prev.filter((h: ResearchRun) => h.id !== fallbackRun.id)]);
+      const failedRun: ResearchRun = {
+        id: `run_err_${Date.now()}`,
+        companyInput: payload,
+        status: 'FAILED',
+        sources: [],
+        evidence: [],
+        signals: [],
+        opportunity: null,
+        gtmHandoff: null,
+        error: err?.message || 'Network connection failed. In accordance with SponZilla grounding rules, synthetic sources are never fabricated.',
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      };
+      setCurrentRun(failedRun);
     } finally {
       setLoading(false);
     }

@@ -94,6 +94,17 @@ export const SourceSchema = z.object({
 });
 export type Source = z.infer<typeof SourceSchema>;
 
+export const GTMHandoffResultSchema = z.object({
+  status: z.enum(['SUCCESS', 'SKIPPED', 'FAILED']),
+  statusCode: z.number().nullable().optional(),
+  gtmOpportunityId: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  error: z.string().nullable().optional(),
+  attemptedAt: z.string(),
+  endpoint: z.string().optional(),
+});
+export type GTMHandoffResult = z.infer<typeof GTMHandoffResultSchema>;
+
 /** Internal research run envelope. Opportunity payload is always OpportunityV1. */
 export const ResearchRunSchema = z.object({
   id: z.string(),
@@ -103,6 +114,7 @@ export const ResearchRunSchema = z.object({
   evidence: z.array(EvidenceV1Schema),
   signals: z.array(SignalV1Schema),
   opportunity: OpportunityV1Schema.nullable().default(null),
+  gtmHandoff: GTMHandoffResultSchema.nullable().optional().default(null),
   error: z.string().nullable().default(null),
   createdAt: z.string(),
   completedAt: z.string().nullable().default(null),

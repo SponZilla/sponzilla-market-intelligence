@@ -1,9 +1,27 @@
 import { CompanyInput, EvidenceV1, OpportunityV1, ResearchRun, SignalV1, Source } from '@sponzilla/shared';
 
+/**
+ * Grounding Rule: SponZilla strictly prohibits inventing contacts, budgets,
+ * campaigns, sponsorship history, or opportunities in production.
+ *
+ * This fallback generator is strictly prohibited in production and will throw.
+ * In development, it must only be used if explicitly permitted, and is tagged
+ * as an unverified synthetic simulation.
+ */
 export function executeClientResearch(input: CompanyInput): ResearchRun {
+  const isProduction =
+    (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') ||
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.PROD);
+
+  if (isProduction) {
+    throw new Error(
+      "Grounding Rule Violation: Synthetic client-side research is strictly disabled in production. All Market Intelligence must originate from live, verified web sources."
+    );
+  }
+
   const now = new Date().toISOString();
-  const runId = `run_${Math.random().toString(36).substring(2, 10)}`;
-  const oppId = `opp_${Math.random().toString(36).substring(2, 10)}`;
+  const runId = `run_sim_${Math.random().toString(36).substring(2, 10)}`;
+  const oppId = `opp_sim_${Math.random().toString(36).substring(2, 10)}`;
   
   const companyName = input.companyName.trim();
   const websiteUrl = input.websiteUrl.trim();
@@ -12,84 +30,39 @@ export function executeClientResearch(input: CompanyInput): ResearchRun {
 
   const cleanBaseUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`;
 
+  // Synthetic sources tagged as UNVERIFIED to avoid misleading operators
   const sources: Source[] = [
     {
-      id: `src_1_${slug}`,
+      id: `src_sim_1_${slug}`,
       url: cleanBaseUrl,
-      title: `${companyName} - Official Company Overview & Brand Intelligence`,
-      publishedDate: '2024-08-15',
-      snippet: `${companyName} expands global brand initiatives, targeting key consumer demographics with high-energy digital & live activation partnerships.`,
-      verificationStatus: 'VERIFIED_LIVE',
-      capturedAt: now
-    },
-    {
-      id: `src_2_${slug}`,
-      url: cleanBaseUrl,
-      title: `${companyName} Verified Market Intelligence: Sponsorship & Campaign Strategy`,
-      publishedDate: '2024-09-01',
-      snippet: `Official market intelligence: ${companyName} commits regional marketing budgets for upcoming events, creator collaborations, and experiential activations.`,
-      verificationStatus: 'VERIFIED_LIVE',
+      title: `${companyName} [SIMULATION] - Unverified Sandbox Overview`,
+      publishedDate: null,
+      snippet: `[DEMO SIMULATION] This is simulated content for local testing. Not verified via live search.`,
+      verificationStatus: 'UNVERIFIED',
       capturedAt: now
     }
   ];
 
   const evidence: EvidenceV1[] = [
     {
-      id: `ev_1_${slug}`,
-      claim: `${companyName} is expanding sponsorship budgets for live activations`,
-      fact: `According to official announcements from ${companyName}, marketing budgets have been allocated for high-engagement live events and creator partnerships.`,
-      aiInference: `${companyName} seeks immediate brand visibility among target demographics and is evaluating event sponsorship proposals.`,
-      suggestedAngle: `Title Sponsorship for upcoming regional festival with integrated product distribution rights.`,
-      sourceId: sources[1].id,
-      source: {
-        title: sources[1].title,
-        url: sources[1].url,
-        type: 'Press Release',
-        publishedAt: sources[1].publishedDate,
-        verified: true
-      },
-      confidenceScore: 0.92
-    },
-    {
-      id: `ev_2_${slug}`,
-      claim: `${companyName} is targeting high-growth consumer engagement`,
-      fact: `${companyName}'s strategic overview prioritizes digital creator partnerships, interactive booth experiences, and co-branded content.`,
-      aiInference: `Digital integration alongside physical sampling booths will yield high ROI for ${companyName}.`,
-      suggestedAngle: `VIP Lounge & Creator Hub sponsorship with direct product sampling rights.`,
+      id: `ev_sim_1_${slug}`,
+      claim: `${companyName} [SIMULATION - NOT GROUNDED]`,
+      fact: `Offline simulation placeholder: no live web evidence was retrieved for ${companyName}.`,
+      aiInference: `Offline simulation only. Do not execute real GTM outreach against this placeholder.`,
+      suggestedAngle: null,
       sourceId: sources[0].id,
       source: {
         title: sources[0].title,
         url: sources[0].url,
-        type: 'Official Website',
-        publishedAt: sources[0].publishedDate,
-        verified: true
+        type: 'Unverified Sandbox',
+        publishedAt: null,
+        verified: false
       },
-      confidenceScore: 0.88
+      confidenceScore: 0.1
     }
   ];
 
-  const signals: SignalV1[] = [
-    {
-      id: `sig_1_${slug}`,
-      type: 'marketing_campaign',
-      title: `Marketing Expansion & Regional Campaign Launch`,
-      summary: `${companyName} is actively scaling brand awareness via sponsorships and creator partnerships.`,
-      evidenceIds: [evidence[0].id],
-      sourceUrl: sources[1].url,
-      sourceTitle: sources[1].title,
-      detectedAt: now
-    },
-    {
-      id: `sig_2_${slug}`,
-      type: 'product_launch',
-      title: `Experiential Product Launch & Event Activation`,
-      summary: `${companyName} requires direct consumer trial and experiential marketing for core products.`,
-      evidenceIds: [evidence[1].id],
-      sourceUrl: sources[0].url,
-      sourceTitle: sources[0].title,
-      detectedAt: now
-    }
-  ];
+  const signals: SignalV1[] = [];
 
   const opportunity: OpportunityV1 = {
     contractVersion: 'v1',
@@ -99,27 +72,24 @@ export function executeClientResearch(input: CompanyInput): ResearchRun {
       contractId: `company_${slug}_${domain}`,
       name: companyName,
       websiteUrl: input.websiteUrl,
-      location: input.location || 'New York, NY',
-      industry: input.category || 'Consumer Goods & Lifestyle'
+      location: input.location || null,
+      industry: input.category || null
     },
     signals,
     evidence,
-    audience: 'Target consumer enthusiasts seeking authentic brand experiences and product activations.',
-    marketingNeed: `${companyName} requires high-impact experiential sponsorship packages to maximize regional brand activation.`,
+    audience: 'Unknown / unverified in offline simulation',
+    marketingNeed: 'Unknown / unverified in offline simulation',
     aiInference: {
-      summary: `High commercial fit identified for ${companyName}. Verified active sponsorship expansion across digital and live channels.`,
-      groundedReasoning: `Verified HTTP 200 press releases confirm dedicated marketing budget allocation for experiential sponsorships.`,
-      assumptions: [
-        'Sponsorship decisions are executed on a quarterly planning cycle.',
-        'Target company prefers packages with direct product distribution rights.'
-      ],
-      unsupportedClaimsWarning: null
+      summary: `Offline simulation placeholder for ${companyName}. No live evidence gathered.`,
+      groundedReasoning: `Grounding rule enforcement: No live sources reachable. Synthetic facts are prohibited.`,
+      assumptions: ['Running in offline development fallback mode.'],
+      unsupportedClaimsWarning: 'SIMULATED DEMO: Synthetic placeholder. Not grounded in live web sources.'
     },
-    confidence: 'HIGH',
-    confidenceReason: 'Multiple verified live HTTP 200 sources confirm active budget allocation and expansion goals.',
-    recommendation: `Pitch custom Sponsorship Package ($25,000 - $50,000) including branding, product sampling rights, and digital content.`,
-    nextActionHint: `Send tailored 5-page sponsorship proposal deck to ${companyName} marketing leads within 48 hours.`,
-    qualificationStatus: 'QUALIFIED',
+    confidence: 'LOW',
+    confidenceReason: 'Zero verified live sources retrieved.',
+    recommendation: 'Run pipeline with live search provider (Tavily/Brave) to discover verified opportunities.',
+    nextActionHint: 'Connect live search credentials.',
+    qualificationStatus: 'NO_VERIFIED_OPPORTUNITY',
     icpAssessment: null,
     buyerPersonas: [],
     decisionMakers: [],
@@ -134,6 +104,11 @@ export function executeClientResearch(input: CompanyInput): ResearchRun {
     evidence,
     signals,
     opportunity,
+    gtmHandoff: {
+      status: 'SKIPPED',
+      reason: 'NO_VERIFIED_OPPORTUNITY',
+      attemptedAt: now,
+    },
     error: null,
     createdAt: now,
     completedAt: now

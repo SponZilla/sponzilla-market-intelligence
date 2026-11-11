@@ -1,7 +1,9 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// From apps/api/src/config (or apps/api/dist/config) the monorepo root is four
+// levels up. Three levels pointed at apps/.env, so the root .env was ignored.
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),

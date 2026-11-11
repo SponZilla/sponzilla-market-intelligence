@@ -1,4 +1,8 @@
-import { ISearchProvider, SearchResultItem } from './search-provider.interface';
+import {
+  ISearchProvider,
+  SearchOptions,
+  SearchResultItem,
+} from './search-provider.interface';
 
 export class BraveSearchProvider implements ISearchProvider {
   readonly name = 'brave';
@@ -13,11 +17,20 @@ export class BraveSearchProvider implements ISearchProvider {
     }
   }
 
-  async search(query: string, _companyName: string): Promise<SearchResultItem[]> {
+  async search(
+    query: string,
+    _companyName: string,
+    options: SearchOptions = {},
+  ): Promise<SearchResultItem[]> {
     const results: SearchResultItem[] = [];
+    const sitePrefix = (options.includeDomains ?? [])
+      .filter(Boolean)
+      .map((domain) => `site:${domain}`)
+      .join(' ');
+    const scopedQuery = sitePrefix ? `${sitePrefix} ${query}` : query;
 
     try {
-      const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=10`;
+      const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(scopedQuery)}&count=10`;
       const res = await fetch(url, {
         method: 'GET',
         headers: {

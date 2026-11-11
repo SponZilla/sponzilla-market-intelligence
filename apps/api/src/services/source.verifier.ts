@@ -41,6 +41,21 @@ const REPUTABLE_MEDIA_DOMAINS = [
   'amworldgroup.com'
 ];
 
+function hostVariants(url: string): string[] {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const alternateHost = host.startsWith('www.') ? host.slice(4) : `www.${host}`;
+
+    const alternate = new URL(url);
+    alternate.hostname = alternateHost;
+
+    return [url, alternate.toString()];
+  } catch {
+    return [url];
+  }
+}
+
 export class SourceVerifier {
   /**
    * Verifies that a candidate URL is live (200 OK), relevant to companyName, and not an irrelevant third-party or career link
@@ -93,18 +108,38 @@ export class SourceVerifier {
         }
       }
 
-      const res = await fetch(candidateUrl, {
-        method: 'GET',
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9'
-        },
-        signal: AbortSignal.timeout(6000)
-      });
+      /*
+       * Some brands serve the apex domain differently from www (duolingo.com
+       * fails to resolve while www.duolingo.com is fine). Trying the alternate
+       * host avoids recording a live official page as an unverified source.
+       */
+      let fetchedUrl = candidateUrl;
+      let res: Response | undefined;
 
-      if (!res.ok) {
+      for (const url of hostVariants(candidateUrl)) {
+        try {
+          const candidateRes = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.9'
+            },
+            signal: AbortSignal.timeout(6000)
+          });
+
+          if (candidateRes.ok) {
+            res = candidateRes;
+            fetchedUrl = url;
+            break;
+          }
+        } catch {
+          // Try the next host variant.
+        }
+      }
+
+      if (!res?.ok) {
         return unverified;
       }
 
@@ -198,7 +233,7 @@ export class SourceVerifier {
 
       return {
         isVerified: true,
-        url: candidateUrl,
+        url: fetchedUrl,
         title: title || `${companyName} Verified Source`,
         snippet: snippet.substring(0, 500),
         publishedDate: recencyInfo.publishedDate,

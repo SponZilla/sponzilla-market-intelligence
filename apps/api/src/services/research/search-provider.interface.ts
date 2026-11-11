@@ -7,5 +7,17 @@ export interface SearchResultItem {
 
 export interface ISearchProvider {
   name: string;
-  search(query: string, companyName: string): Promise<SearchResultItem[]>;
+  /**
+   * Restrict results to these hosts when the provider supports it. Providers
+   * that only understand query syntax apply it as a `site:` restriction.
+   */
+  search(
+    query: string,
+    companyName: string,
+    options?: SearchOptions
+  ): Promise<SearchResultItem[]>;
+}
+
+export interface SearchOptions {
+  includeDomains?: string[];
 }

@@ -99,6 +99,119 @@ describe('DecisionMakerFinder Unit Tests (Grounding & Provenance)', () => {
     assert.strictEqual(results[0].name, 'Noel Mack');
   });
 
+  test('Drops profiles that only mention the company without stating employment', async () => {
+    const mockProvider: ISearchProvider = {
+      name: 'mock',
+      async search(): Promise<SearchResultItem[]> {
+        return [
+          {
+            url: 'https://www.linkedin.com/in/julianne-garry',
+            title: 'Julianne Garry | Chief Marketing Officer - Fractional CMO',
+            snippet: 'Fractional CMO. Previously worked with brands such as Strava and Nike.',
+          },
+          {
+            url: 'https://fr.linkedin.com/in/0xabdelstark',
+            title: 'Abdelhamid Bakhta - Director of Research Partnerships',
+            snippet: 'Ethereum researcher. Cyclist and Strava user.',
+          },
+          {
+            url: 'https://www.linkedin.com/in/paul-fletcher',
+            title: 'Paul Fletcher | Focussing on personal objectives for a while',
+            snippet: 'Strava athlete and former marketing lead.',
+          },
+        ];
+      },
+    };
+
+    const finder = new DecisionMakerFinder(mockProvider);
+    const results = await finder.findDecisionMakers('Strava');
+
+    assert.deepStrictEqual(results, [], 'Mentioning the company is not employment at it');
+  });
+
+  test('Accepts a profile whose snippet states current employment at the company', async () => {
+    const mockProvider: ISearchProvider = {
+      name: 'mock',
+      async search(): Promise<SearchResultItem[]> {
+        return [
+          {
+            url: 'https://www.linkedin.com/in/sam-rivera',
+            title: 'Sam Rivera | LinkedIn',
+            snippet: 'Sam Rivera is Head of Partnerships at Strava. Building community programmes.',
+          },
+        ];
+      },
+    };
+
+    const finder = new DecisionMakerFinder(mockProvider);
+    const results = await finder.findDecisionMakers('Strava');
+
+    assert.strictEqual(results.length, 1);
+    assert.strictEqual(results[0].linkedinUrl, 'https://www.linkedin.com/in/sam-rivera');
+    assert.strictEqual(results[0].verified, true);
+  });
+
+  test('Rejects a stated employer that is not the target company', async () => {
+    const mockProvider: ISearchProvider = {
+      name: 'mock',
+      async search(): Promise<SearchResultItem[]> {
+        return [
+          {
+            url: 'https://www.linkedin.com/in/laurenpica',
+            title: 'Lauren Pica - VP of Marketing @ Grindr',
+            snippet: 'VP of Marketing at Grindr. Former marketing lead at Strava.',
+          },
+        ];
+      },
+    };
+
+    const finder = new DecisionMakerFinder(mockProvider);
+    assert.deepStrictEqual(await finder.findDecisionMakers('Strava'), []);
+  });
+
+  test('Rejects past employment at the target company', async () => {
+    const mockProvider: ISearchProvider = {
+      name: 'mock',
+      async search(): Promise<SearchResultItem[]> {
+        return [
+          {
+            url: 'https://www.linkedin.com/in/former-cmo',
+            title: 'Sam Lee - CMO - Advisor',
+            snippet: 'Former Chief Marketing Officer at Strava (2016 to 2021). Advisor to fitness startups.',
+          },
+          {
+            url: 'https://www.linkedin.com/in/closed-range',
+            title: 'Dana White - Head of Partnerships',
+            snippet: 'Experience\n- Head of Partnerships at Strava (Jan 2018 to Mar 2021)\n- Advisor at Self Employed',
+          },
+        ];
+      },
+    };
+
+    const finder = new DecisionMakerFinder(mockProvider);
+    assert.deepStrictEqual(await finder.findDecisionMakers('Strava'), []);
+  });
+
+  test('Restricts the search to LinkedIn through the provider option, not query text', async () => {
+    const calls: Array<{ query: string; options?: { includeDomains?: string[] } }> = [];
+    const mockProvider: ISearchProvider = {
+      name: 'mock',
+      async search(query, _company, options): Promise<SearchResultItem[]> {
+        calls.push({ query, options });
+        return [];
+      },
+    };
+
+    const finder = new DecisionMakerFinder(mockProvider);
+    await finder.findDecisionMakers('Gymshark');
+
+    assert.ok(calls.length >= 1);
+    for (const call of calls) {
+      assert.deepStrictEqual(call.options?.includeDomains, ['linkedin.com']);
+      assert.ok(!call.query.includes('site:'), 'site: must not be part of the query');
+    }
+  });
+
   test('Gracefully handles search provider errors without throwing', async () => {
     const mockProvider: ISearchProvider = {
       name: 'mock',

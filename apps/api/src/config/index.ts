@@ -17,5 +17,8 @@ export const config = {
   researchApiKey: process.env.RESEARCH_API_KEY || '',
   gtmIngestUrl: process.env.GTM_INGEST_URL || 'http://127.0.0.1:3000/api/v1/opportunities/ingest',
   gtmAdminApiKey: process.env.INTERNAL_ADMIN_API_KEY || process.env.GTM_ADMIN_API_KEY || '',
+  // Forwarded to GTM as X-Operator-Id so the generated card belongs to the user
+  // who asked for the research instead of landing with no owner.
+  gtmOperatorId: process.env.GTM_OPERATOR_ID || '',
   enableGtmAutoHandoff: process.env.ENABLE_GTM_AUTO_HANDOFF !== 'false',
 };

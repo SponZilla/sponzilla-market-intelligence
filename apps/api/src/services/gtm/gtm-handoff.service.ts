@@ -5,21 +5,28 @@ import { config } from '../../config';
 export interface GTMHandoffOptions {
   ingestUrl?: string;
   adminApiKey?: string;
+  /** User whose research produced the payload; becomes the card owner in GTM. */
+  operatorId?: string;
   fetchFn?: typeof fetch;
 }
 
 export class GTMHandoffService {
   private readonly ingestUrl: string;
   private readonly adminApiKey: string;
+  private readonly operatorId: string;
   private readonly fetchClient: typeof fetch;
 
   constructor(options: GTMHandoffOptions = {}) {
     this.ingestUrl = options.ingestUrl || config.gtmIngestUrl;
     this.adminApiKey = options.adminApiKey || config.gtmAdminApiKey;
+    this.operatorId = options.operatorId || config.gtmOperatorId;
     this.fetchClient = options.fetchFn || fetch;
   }
 
-  async postOpportunityToGTM(opportunity: OpportunityV1): Promise<GTMHandoffResult> {
+  async postOpportunityToGTM(
+    opportunity: OpportunityV1,
+    operatorId?: string,
+  ): Promise<GTMHandoffResult> {
     const attemptedAt = new Date().toISOString();
     const endpoint = this.ingestUrl;
 
@@ -54,6 +61,17 @@ export class GTMHandoffService {
 
     if (this.adminApiKey) {
       headers['Authorization'] = `Bearer ${this.adminApiKey}`;
+    }
+
+    /*
+     * A card answers one users question, so GTM needs to know whose it is.
+     * Without this header GTM falls back to GTM_DEFAULT_OWNER_ID and the card
+     * is owned by nobody, which makes it invisible in that users pipeline.
+     */
+    const owner = (operatorId || this.operatorId || '').trim();
+
+    if (owner) {
+      headers['X-Operator-Id'] = owner;
     }
 
     try {
